@@ -1,13 +1,13 @@
 import * as core from '@actions/core'
 import * as exec from '@actions/exec'
 import * as fs from 'fs'
-import * as fshelper from './fs-helper'
+import * as fshelper from './fs-helper.js'
 import * as io from '@actions/io'
 import * as path from 'path'
-import * as refHelper from './ref-helper'
-import * as regexpHelper from './regexp-helper'
-import * as retryHelper from './retry-helper'
-import {GitVersion} from './git-version'
+import * as refHelper from './ref-helper.js'
+import * as regexpHelper from './regexp-helper.js'
+import * as retryHelper from './retry-helper.js'
+import {GitVersion} from './git-version.js'
 
 // Auth header not supported before 2.9
 // Wire protocol v2 not supported before 2.18
@@ -43,7 +43,7 @@ export interface IGitCommandManager {
   getDefaultBranch(repositoryUrl: string): Promise<string>
   getSubmoduleConfigPaths(recursive: boolean): Promise<string[]>
   getWorkingDirectory(): string
-  init(): Promise<void>
+  init(objectFormat?: string): Promise<void>
   isDetached(): Promise<boolean>
   lfsFetch(ref: string): Promise<void>
   lfsInstall(): Promise<void>
@@ -364,8 +364,14 @@ class GitCommandManager {
     return this.workingDirectory
   }
 
-  async init(): Promise<void> {
-    await this.execGit(['init', this.workingDirectory])
+  async init(objectFormat?: string): Promise<void> {
+    const args = ['init']
+    if (objectFormat === 'sha256') {
+      args.push('--object-format=sha256')
+    }
+    args.push(this.workingDirectory)
+
+    await this.execGit(args)
   }
 
   async isDetached(): Promise<boolean> {
@@ -504,7 +510,7 @@ class GitCommandManager {
     } else {
       args.push(globalConfig ? '--global' : '--local')
     }
-    args.push('--unset', configKey, configValue)
+    args.push('--unset', configKey, regexpHelper.escape(configValue))
 
     const output = await this.execGit(args, true)
     return output.exitCode === 0

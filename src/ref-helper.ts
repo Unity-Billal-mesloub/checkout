@@ -1,7 +1,7 @@
-import {IGitCommandManager} from './git-command-manager'
+import {IGitCommandManager} from './git-command-manager.js'
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import {getServerApiUrl, isGhes} from './url-helper'
+import {getServerApiUrl, isGhes} from './url-helper.js'
 
 export const tagsRefSpec = '+refs/tags/*:refs/tags/*'
 
@@ -258,7 +258,9 @@ export async function checkCommitInfo(
     }
 
     // Extract details from message
-    const match = commitInfo.match(/Merge ([0-9a-f]{40}) into ([0-9a-f]{40})/)
+    const match = commitInfo.match(
+      /Merge ([0-9a-f]{40}|[0-9a-f]{64}) into ([0-9a-f]{40}|[0-9a-f]{64})/
+    )
     if (!match) {
       core.debug('Unexpected message format')
       return
@@ -290,7 +292,7 @@ export async function checkCommitInfo(
   }
 }
 
-function fromPayload(path: string): any {
+export function fromPayload(path: string): any {
   return select(github.context.payload, path)
 }
 
